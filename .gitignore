@@ -1,2 +1,5 @@
 windows/private/
 wsl_ubuntu/private/
+
+windows/zfiles/
+wsl_ubuntu/zfiles/
