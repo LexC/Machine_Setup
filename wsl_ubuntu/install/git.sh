@@ -59,7 +59,7 @@ fi
 # =============================================================================
 
 _write_private_git_config() {
-  mkdir -p "${PRIVATE_DIR}"
+  ensure_directory "${PRIVATE_DIR}"
 
   {
     printf '%s\n' '# Private Git identity configuration for WSL Ubuntu setup scripts.'
@@ -75,11 +75,11 @@ _write_private_git_config() {
 
 _prompt_for_missing_git_identity() {
   if is_blank "${GIT_USER_NAME}"; then
-    read -r -p "Enter your Git user name: " GIT_USER_NAME
+    prompt_required_value "Enter your Git user name" GIT_USER_NAME "Git user name is required."
   fi
 
   if is_blank "${GIT_USER_EMAIL}"; then
-    read -r -p "Enter your Git user email: " GIT_USER_EMAIL
+    prompt_required_value "Enter your Git user email" GIT_USER_EMAIL "Git user email is required."
   fi
 }
 
@@ -161,7 +161,7 @@ _git_default_branch_needs_configuration() {
 # =============================================================================
 
 section "Installing Git"
-if command -v git >/dev/null 2>&1; then
+if command_exists git; then
   log "Git is already installed: $(git --version)"
 else
   sudo apt-get install -y git

@@ -15,10 +15,12 @@
 # - `shell_quote`
 # - `command_exists`
 # - `require_command`
+# - `require_option_value`
 # - `ensure_directory`
 # - `file_is_nonempty`
 # - `is_interactive_terminal`
 # - `require_interactive_terminal`
+# - `prompt_required_value`
 # - `prompt_yes_no`
 # - `validate_wsl`
 # - `validate_yes_no`
@@ -55,10 +57,10 @@ _classify_yes_no() {
   local answer="${1:-}"
 
   case "${answer}" in
-    y|Y|yes|YES|Yes)
+    y|Y|yes|YES|Yes|1)
       return 0
       ;;
-    n|N|no|NO|No)
+    n|N|no|NO|No|0)
       return 1
       ;;
     *)
@@ -89,6 +91,15 @@ require_command() {
   command_exists "${command_name}" || die "Required command not found: ${command_name}"
 }
 
+require_option_value() {
+  local option_name="${1}"
+  local option_value="${2-}"
+
+  if is_blank "${option_value}" || [[ "${option_value}" == -* ]]; then
+    die "Missing value for ${option_name}"
+  fi
+}
+
 ensure_directory() {
   mkdir -p "${1}"
 }
@@ -103,6 +114,32 @@ is_interactive_terminal() {
 
 require_interactive_terminal() {
   is_interactive_terminal || die "This operation requires an interactive terminal."
+}
+
+prompt_required_value() {
+  local prompt_text="${1}"
+  local output_var_name="${2-}"
+  local blank_message="${3:-Value cannot be empty.}"
+  local answer=""
+
+  if is_blank "${output_var_name}"; then
+    die "prompt_required_value requires an output variable name."
+  fi
+
+  local -n output_ref="${output_var_name}"
+
+  require_interactive_terminal
+
+  while true; do
+    read -r -p "${prompt_text}: " answer
+    if is_blank "${answer}"; then
+      warn "${blank_message}"
+      continue
+    fi
+
+    output_ref="${answer}"
+    return 0
+  done
 }
 
 validate_wsl() {

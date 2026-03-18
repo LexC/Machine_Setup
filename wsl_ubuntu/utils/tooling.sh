@@ -12,6 +12,7 @@
 # Current public functions
 # ------------------------
 # - `is_interactive_terminal`
+# - `resolve_conda_command`
 # - `resolve_downloader`
 # - `download_with_cache`
 # - `update_conda_base_environment`
@@ -50,7 +51,7 @@ _resolve_tool_command() {
   local command_name="${1}"
   local fallback_path="${2:-}"
 
-  if command -v "${command_name}" >/dev/null 2>&1; then
+  if command_exists "${command_name}"; then
     command -v "${command_name}"
     return 0
   fi
@@ -64,12 +65,12 @@ _resolve_tool_command() {
 }
 
 resolve_downloader() {
-  if command -v curl >/dev/null 2>&1; then
+  if command_exists curl; then
     printf '%s\n' "curl"
     return 0
   fi
 
-  if command -v wget >/dev/null 2>&1; then
+  if command_exists wget; then
     printf '%s\n' "wget"
     return 0
   fi
@@ -83,14 +84,14 @@ download_with_cache() {
   local validator_func="${3:-}"
   local downloader=""
 
-  mkdir -p "$(dirname "${target_path}")"
+  ensure_directory "$(dirname "${target_path}")"
 
   if [ -n "${validator_func}" ]; then
     if "${validator_func}" "${target_path}"; then
       printf '%s\n' "${target_path}"
       return 0
     fi
-  elif [ -s "${target_path}" ]; then
+  elif file_is_nonempty "${target_path}"; then
     printf '%s\n' "${target_path}"
     return 0
   fi
@@ -113,7 +114,7 @@ download_with_cache() {
     if ! "${validator_func}" "${target_path}"; then
       die "Downloaded file failed validation: ${target_path}"
     fi
-  elif [ ! -s "${target_path}" ]; then
+  elif ! file_is_nonempty "${target_path}"; then
     die "Downloaded file is empty: ${target_path}"
   fi
 
@@ -124,10 +125,10 @@ download_with_cache() {
 # Section: Conda
 # =============================================================================
 
-# Default fallback location for a standard Miniconda installation.
-: "${CONDA_DEFAULT_BIN:=${HOME}/miniconda3/bin/conda}"
-_resolve_conda_command() {
-  _resolve_tool_command "conda" "${CONDA_DEFAULT_BIN}"
+resolve_conda_command() {
+  local fallback_conda="${CONDA_DEFAULT_BIN:-${MINICONDA_INSTALL_DIR:-${HOME}/miniconda3}/bin/conda}"
+
+  _resolve_tool_command "conda" "${fallback_conda}"
 }
 
 
@@ -136,7 +137,7 @@ _resolve_conda_command() {
 update_conda_base_environment() {
   local conda_cmd=""
 
-  if ! conda_cmd="$(_resolve_conda_command)"; then
+  if ! conda_cmd="$(resolve_conda_command)"; then
     warn "Conda was not found. Skipping Conda base environment update."
     return 0
   fi
