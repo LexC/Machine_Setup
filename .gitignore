@@ -3,3 +3,29 @@ wsl_ubuntu/private/
 
 windows/zfiles/
 wsl_ubuntu/zfiles/
+
+.vscode
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+.venv/
+venv/
+env/
+ENV/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+build/
+dist/
+*.egg-info/
+
+# Local agent tooling
+AGENTS.md
+.agents/
+.codex
