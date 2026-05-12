@@ -126,9 +126,42 @@ download_with_cache() {
 # =============================================================================
 
 resolve_conda_command() {
-  local fallback_conda="${CONDA_DEFAULT_BIN:-${MINICONDA_INSTALL_DIR:-${HOME}/miniconda3}/bin/conda}"
+  local preferred_conda="${CONDA_DEFAULT_BIN:-}"
+  local fallback_conda="${MINICONDA_INSTALL_DIR:-${HOME}/miniconda3}/bin/conda"
+
+  if [ -n "${preferred_conda}" ] && [ -x "${preferred_conda}" ]; then
+    printf '%s\n' "${preferred_conda}"
+    return 0
+  fi
 
   _resolve_tool_command "conda" "${fallback_conda}"
+}
+
+_conda_supports_tos_command() {
+  local conda_cmd="${1}"
+
+  "${conda_cmd}" tos --help >/dev/null 2>&1
+}
+
+accept_conda_default_channel_tos() {
+  local conda_cmd="${1}"
+  local channel_url=""
+  local -a default_channels=(
+    "https://repo.anaconda.com/pkgs/main"
+    "https://repo.anaconda.com/pkgs/r"
+  )
+
+  if ! _conda_supports_tos_command "${conda_cmd}"; then
+    return 0
+  fi
+
+  log "Accepting Conda Terms of Service for default channels"
+
+  for channel_url in "${default_channels[@]}"; do
+    if ! "${conda_cmd}" tos accept --override-channels --channel "${channel_url}" >/dev/null 2>&1; then
+      die "Failed to accept Conda Terms of Service for channel: ${channel_url}"
+    fi
+  done
 }
 
 
@@ -145,6 +178,7 @@ update_conda_base_environment() {
   section "Updating Conda base environment"
 
   log "Using Conda executable: ${conda_cmd}"
+  accept_conda_default_channel_tos "${conda_cmd}"
   "${conda_cmd}" update -n base -c defaults conda -y
   "${conda_cmd}" update -n base --all -y
 

@@ -14,6 +14,7 @@
 # - downloads the Miniconda installer for the current CPU architecture
 # - installs Miniconda non-interactively into `~/miniconda3`
 # - initializes Bash shell support with `conda init bash`
+# - disables automatic activation of the Conda `base` environment
 # - updates the Conda base environment through the shared tooling helper
 #
 # Notes
@@ -94,6 +95,9 @@ fi
 
 log "Initializing Conda for ${MINICONDA_INIT_SHELL}"
 "${MINICONDA_INSTALL_DIR}/bin/conda" init "${MINICONDA_INIT_SHELL}" >/dev/null
+
+log "Disabling automatic activation of Conda base environment"
+"${MINICONDA_INSTALL_DIR}/bin/conda" config --set auto_activate_base false >/dev/null
 
 log "Updating Conda base environment"
 CONDA_DEFAULT_BIN="${MINICONDA_INSTALL_DIR}/bin/conda" update_conda_base_environment

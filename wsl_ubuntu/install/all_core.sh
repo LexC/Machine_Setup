@@ -78,8 +78,7 @@ main() {
   done
 
   major_section "Initial System Maintenance"
-  update_system_packages
-  upgrade_system_packages
+  refresh_and_upgrade_system_packages
 
   for task in "${TASKS[@]}"; do
     IFS=":" read -r label script_path <<< "${task}"
@@ -87,8 +86,7 @@ main() {
   done
 
   major_section "Final System Maintenance"
-  update_system_packages
-  upgrade_system_packages
+  refresh_and_upgrade_system_packages
 
   success "Core WSL setup run complete"
 }

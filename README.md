@@ -21,7 +21,7 @@ to adapt to another machine with small configuration changes.
   - `windows/update.ps1` on Windows
   - `wsl_ubuntu/update.sh` on Linux / WSL
 - `windows/`
-  PowerShell and batch scripts for host-side Windows setup and maintenance.
+  PowerShell scripts for host-side Windows setup and maintenance.
 - `wsl_ubuntu/`
   Bash scripts for Ubuntu-on-WSL setup and maintenance.
 
@@ -32,6 +32,7 @@ Machine_Setup/
 |- update.py
 |- windows/
 |  |- update.ps1
+|  |- setup_wsl.ps1
 |  |- install_system_requirements.ps1
 |  |- install_softwares.ps1
 |  |- system_info.ps1
@@ -39,7 +40,6 @@ Machine_Setup/
 |- wsl_ubuntu/
    |- update.sh
    |- firstrun.sh
-   |- wsl_setup.bat
    |- install/
    |  |- all_core.sh
    |  |- git.sh
@@ -189,7 +189,7 @@ Run it with:
 .\windows\install_softwares.ps1
 ```
 
-### `wsl_ubuntu/wsl_setup.bat`
+### `windows/setup_wsl.ps1`
 
 Windows-side bootstrap for WSL and Ubuntu.
 
@@ -198,12 +198,23 @@ It will:
 - elevate to Administrator when needed
 - install WSL with Ubuntu if WSL is not fully available
 - install Ubuntu when WSL exists but no Ubuntu distribution is present
+- support `-Action UninstallDistros` to unregister all WSL distros
+- support `-Action UninstallWsl` to unregister all distros, disable WSL
+  features, and remove the WSL app package
 - avoid destructive behavior if WSL and Ubuntu are already installed
 
 Run it from Command Prompt or PowerShell:
 
 ```bat
-wsl_ubuntu\wsl_setup.bat
+powershell -ExecutionPolicy Bypass -File .\windows\setup_wsl.ps1
+```
+
+Examples:
+
+```powershell
+.\windows\setup_wsl.ps1
+.\windows\setup_wsl.ps1 -Action UninstallDistros
+.\windows\setup_wsl.ps1 -Action UninstallWsl
 ```
 
 ## WSL Ubuntu Workflows
@@ -341,7 +352,7 @@ bash wsl_ubuntu/install/setup_wsl_llm_dev.sh
 
 For a new Windows machine:
 
-1. Run `wsl_ubuntu/wsl_setup.bat` if WSL + Ubuntu are not installed yet.
+1. Run `windows/setup_wsl.ps1` if WSL + Ubuntu are not installed yet.
 2. Run `windows/install_system_requirements.ps1`.
 3. Create or supply `windows/private/windows_apps.psd1`.
 4. Run `windows/install_softwares.ps1`.

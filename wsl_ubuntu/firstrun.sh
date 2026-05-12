@@ -34,8 +34,7 @@ source "${SCRIPT_DIR}/utils/system.sh"
 # Section: System bootstrap
 # =============================================================================
 
-update_system_packages
-upgrade_system_packages full-upgrade
+refresh_and_upgrade_system_packages full-upgrade
 
 # Install the base compiler toolchain required by many later setup steps.
 section "Installing base build tools"

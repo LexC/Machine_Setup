@@ -36,6 +36,5 @@ source "${SCRIPT_DIR}/utils/tooling.sh"
 # Section: System maintenance
 # =============================================================================
 
-update_system_packages
-upgrade_system_packages
+refresh_and_upgrade_system_packages
 update_conda_base_environment
