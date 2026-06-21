@@ -1,8 +1,7 @@
-windows/private/
-wsl_ubuntu/private/
-
-windows/zfiles/
-wsl_ubuntu/zfiles/
+#local folders
+private
+zfiles
+system_scripts
 
 .vscode
 

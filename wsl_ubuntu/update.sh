@@ -1,4 +1,14 @@
 #!/usr/bin/env bash
+# Allow accidental `python3 update.sh` invocations by re-executing under Bash.
+""":"
+: <<'PYTHON_UPDATE_SH'
+":"""
+import os
+import sys
+
+os.execvp("bash", ["bash", __file__] + sys.argv[1:])
+""":"
+PYTHON_UPDATE_SH
 # =============================================================================
 # README - Everyday Ubuntu update for WSL
 # =============================================================================
@@ -38,3 +48,4 @@ source "${SCRIPT_DIR}/utils/tooling.sh"
 
 refresh_and_upgrade_system_packages
 update_conda_base_environment
+":"""

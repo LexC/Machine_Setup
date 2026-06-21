@@ -15,6 +15,7 @@
 # - `shell_quote`
 # - `command_exists`
 # - `require_command`
+# - `package_installed`
 # - `require_option_value`
 # - `ensure_directory`
 # - `file_is_nonempty`
@@ -89,6 +90,17 @@ require_command() {
   local command_name="${1}"
 
   command_exists "${command_name}" || die "Required command not found: ${command_name}"
+}
+
+package_installed() {
+  local package_name="${1}"
+  local package_status=""
+
+  if ! package_status="$(dpkg-query -W -f='${db:Status-Abbrev}' "${package_name}" 2>/dev/null)"; then
+    return 1
+  fi
+
+  [[ "${package_status}" == "ii "* ]]
 }
 
 require_option_value() {

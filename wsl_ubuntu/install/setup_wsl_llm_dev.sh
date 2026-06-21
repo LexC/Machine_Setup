@@ -18,7 +18,6 @@
 # What this script does
 # ---------------------
 # 1. Verifies basic execution context
-#    - Checks whether the environment appears to be WSL
 #    - Confirms that `sudo` is available
 #
 # 2. Updates the Ubuntu distribution
@@ -124,32 +123,12 @@ set -euo pipefail
 # Section: Dependencies
 # =============================================================================
 
-readonly SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
-readonly SCRIPT_DIR="$(dirname "${SCRIPT_PATH}")"
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly WSL_UBUNTU_ROOT="$(dirname "${SCRIPT_DIR}")"
-readonly LOG_UTILS_SCRIPT="${WSL_UBUNTU_ROOT}/utils/log.sh"
-readonly COMMON_UTILS_SCRIPT="${WSL_UBUNTU_ROOT}/utils/common.sh"
-readonly SYSTEM_UTILS_SCRIPT="${WSL_UBUNTU_ROOT}/utils/system.sh"
-
-if [ ! -f "${LOG_UTILS_SCRIPT}" ]; then
-  printf '[ERROR] Expected shared helper script at %s\n' "${LOG_UTILS_SCRIPT}" >&2
-  printf '[ERROR] Run this script from the repository checkout and keep it under wsl_ubuntu/install/.\n' >&2
-  exit 1
-fi
-
 # shellcheck disable=SC1091
-source "${LOG_UTILS_SCRIPT}"
+source "${WSL_UBUNTU_ROOT}/utils/common.sh"
 # shellcheck disable=SC1091
-for helper_script in "${COMMON_UTILS_SCRIPT}" "${SYSTEM_UTILS_SCRIPT}"; do
-  if [ ! -f "${helper_script}" ]; then
-    die "Expected shared helper script at ${helper_script}. Run this script from the repository checkout and keep it under wsl_ubuntu/install/."
-  fi
-done
-
-# shellcheck disable=SC1091
-source "${COMMON_UTILS_SCRIPT}"
-# shellcheck disable=SC1091
-source "${SYSTEM_UTILS_SCRIPT}"
+source "${WSL_UBUNTU_ROOT}/utils/system.sh"
 
 # =============================================================================
 # Section: Environment checks
@@ -158,20 +137,6 @@ source "${SYSTEM_UTILS_SCRIPT}"
 has_systemd() {
   # systemd is PID 1 when enabled in WSL
   [ "$(ps -p 1 -o comm= 2>/dev/null | tr -d ' ')" = "systemd" ]
-}
-
-package_installed() {
-  dpkg -s "$1" >/dev/null 2>&1
-}
-
-check_runtime_context() {
-  require_command sudo
-
-  if validate_wsl; then
-    log "WSL environment detected."
-  else
-    warn "This does not look like WSL. The script can still run, but it was designed for WSL Ubuntu."
-  fi
 }
 
 # =============================================================================
@@ -211,15 +176,6 @@ BASE_PACKAGES=(
 # Section: Setup steps
 # =============================================================================
 
-enter_script_directory() {
-  log "Switching to the script directory..."
-  cd "${SCRIPT_DIR}"
-}
-
-refresh_system_packages() {
-  refresh_and_upgrade_system_packages
-}
-
 install_base_packages() {
   local missing_packages=()
   local package
@@ -241,7 +197,9 @@ install_base_packages() {
   fi
 
   log "Ensuring pipx is on PATH for the current user..."
-  python3 -m pipx ensurepath || true
+  if ! python3 -m pipx ensurepath; then
+    warn "pipx ensurepath failed. Continuing, but pipx may not be available in new shells until PATH is fixed."
+  fi
 }
 
 create_workspace() {
@@ -254,16 +212,17 @@ create_workspace() {
 }
 
 setup_base_venv() {
-  if [ ! -d "${BASE_VENV}" ]; then
+  if [ ! -x "${BASE_VENV}/bin/python" ]; then
     log "Creating a base Python virtual environment..."
     python3 -m venv "${BASE_VENV}"
   fi
 
+  if [ ! -x "${BASE_VENV}/bin/python" ]; then
+    die "Base Python virtual environment is incomplete: ${BASE_VENV}"
+  fi
+
   log "Upgrading pip/setuptools/wheel inside the base venv..."
-  # shellcheck disable=SC1091
-  source "${BASE_VENV}/bin/activate"
-  python -m pip install --upgrade pip setuptools wheel
-  deactivate
+  "${BASE_VENV}/bin/python" -m pip install --upgrade pip setuptools wheel
 }
 
 # =============================================================================
@@ -319,9 +278,8 @@ print_environment_summary() {
 main() {
   log "Starting WSL Ubuntu LLM dev environment bootstrap..."
 
-  enter_script_directory
-  check_runtime_context
-  refresh_system_packages
+  require_command sudo
+  refresh_and_upgrade_system_packages
   install_base_packages
   create_workspace
   setup_base_venv
